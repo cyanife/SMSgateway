@@ -5,6 +5,8 @@ import os
 import sys
 import time
 import json
+import logging
+import logging.handlers
 
 reload(sys)
 sys.setdefaultencoding('utf-8')
@@ -106,31 +108,46 @@ class Textmessage(Activemessage):
             print("Failed to load message from file!")
 
 
-def parsecontent(argv):
-    sender_number = argv[1]  # sender's phone number
-    receive_at = argv[2]  # time
-    sms = argv[3]  # sms
-    content = sms + "\n" + sender_number + "\n" + receive_at
-    return content
+class Parseargv(object):
+    def __init__(self, argv):
+        self.sender = argv[1]  # sender's phone number
+        self.time_received = argv[2]  # time received
+        self.sms_content = argv[3]  # content
 
 
 def main():
+    # Setup logger
+    LOG_PATH = r"C:\myfiles\nutstore\python\smsgateway\smsgateway.log"
+    logger = logging.getLogger()
+    logger.setLevel(logging.INFO)
+    formatter = logging.Formatter('[%(asctime)s %(levelname)s] %(message)s')
+    handler = logging.handlers.RotatingFileHandler(LOG_PATH, maxBytes=5 * 1024 * 1024, backupCount=1)
+    handler.setFormatter(formatter)
+    logger.addHandler(handler)
+    # Get token
     tk = AccessToken()
     tk.setpath(os.getcwd())
     tk.getcorpinfo()
     token = tk.gettoken()
-    # print token
-
+    # Send message
     message_conf = os.path.join(os.getcwd(), 'message.conf')
     BLANK_MESSAGE = {}
     msg = Textmessage(BLANK_MESSAGE)
     msg.loadmessage(message_conf)
+    argv = Parseargv(sys.argv)
     # msg.setcontent(unicode("hybird测试"))
     # msg.setcontent(sys.argv[1].decode("GBK"))  # windows console下，参数编码为GBK
-    msg.setcontent(parsecontent(sys.argv))
+    msg.setcontent("%s\nFrom:%s\nTime:%s" % (argv.sms_content, argv.sender, argv.time_received))
     # msg.setcontent(sys.argv[1])  # linux下，参数编码为UTF8
     result = msg.sendmessage(token)
-    # print result
+    errcode = result.pop("errcode", 1)
+    if errcode == 0:
+        logger.info("SENDER:%s TIME:%s CONTENT:%s FORWARD:%s" % (argv.sender, argv.time_received, argv.sms_content,
+                                                                 'SUCCESS'))
+    else:
+        logger.error("SENDER:%s TIME:%s CONTENT:%s FORWARD:%s ERRINFO:" % (argv.sender, argv.time_received,
+                                                                           argv.sms_content, 'FAIL', result))
+        # print result
 
 
 if __name__ == '__main__':
