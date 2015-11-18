@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 import urllib2
-import os
 import sys
 import time
 import json
@@ -13,23 +12,23 @@ sys.setdefaultencoding('utf-8')
 
 
 class AccessToken(object):
-    def __init__(self):
-        self.path = ""
-        self.corpid = ""
-        self.secret = ""
-
-    def setpath(self, path):
-        self.path = path
+    def __init__(self, token):
+        self._corpid = token.pop("corpid", '')
+        self._secret = token.pop("secret", '')
+        self._tokenfile = ''
 
     def setcorpid(self, corpid):
-        self.corpid = corpid
+        self._corpid = corpid
 
     def setsecret(self, secret):
-        self.secret = secret
+        self._secret = secret
 
-    def getcorpinfo(self):
+    def settokenfile(self, tokenfile):
+        self._tokenfile = tokenfile
+
+    def getcorpinfo(self, infofile):
         try:
-            with open(os.path.join(self.path, "corpinfo.conf"), 'r') as f:
+            with open(infofile, 'r') as f:
                 info_dict = json.loads(f.read())
                 self.setcorpid(info_dict.get("corpid"))
                 self.setsecret(info_dict.get("secret"))
@@ -37,16 +36,18 @@ class AccessToken(object):
             print("get info failed, check the file!")
 
     def settoken(self):
-        if self.corpid == '' or self.secret == '':
+        if self._corpid == '' or self._secret == '':
             raise ValueError("invalid Corpid or Secret!")
+        if self._tokenfile == '':
+            raise ValueError("Please set token file first!")
         tokenapi = urllib2.urlopen(
-            "https://qyapi.weixin.qq.com/cgi-bin/gettoken?corpid=%s&corpsecret=%s" % (self.corpid, self.secret))
+            "https://qyapi.weixin.qq.com/cgi-bin/gettoken?corpid=%s&corpsecret=%s" % (self._corpid, self._secret))
         token_dict = json.loads(tokenapi.read())
         token_dict["expires_at"] = str(time.time() + 7000)
         if token_dict.get("access_token") == "":
             print("Error Code:%s, %s" % (token_dict.get("errcode"), token_dict.get("errmsg")))
             raise ValueError
-        with open(os.path.join(self.path, "Token.json"), 'w') as fw:
+        with open(self._tokenfile, 'w') as fw:
             json.dump(token_dict, fw)
 
     def gettoken(self):
@@ -54,7 +55,7 @@ class AccessToken(object):
         token_dict = {}
         while not success:
             try:
-                with open(os.path.join(self.path, "Token.json")) as fr:
+                with open(self._tokenfile) as fr:
                     token_file = fr.read()
                     if token_file == "":
                         self.settoken()
@@ -125,15 +126,19 @@ def main():
     handler.setFormatter(formatter)
     logger.addHandler(handler)
     # Get token
-    tk = AccessToken()
-    tk.setpath(os.getcwd())
-    tk.getcorpinfo()
+    BLANK_TOKEN = {}
+    INFO_FILE = "./corpinfo.conf"
+    TOKEN_FILE = "./token.json"
+
+    tk = AccessToken(BLANK_TOKEN)
+    tk.getcorpinfo(INFO_FILE)
+    tk.settokenfile(TOKEN_FILE)
     token = tk.gettoken()
     # Send message
-    message_conf = os.path.join(os.getcwd(), 'message.conf')
+    MESSAGE_CONF = "./message.conf"
     BLANK_MESSAGE = {}
     msg = Textmessage(BLANK_MESSAGE)
-    msg.loadmessage(message_conf)
+    msg.loadmessage(MESSAGE_CONF)
     argv = Parseargv(sys.argv)
     # msg.setcontent(unicode("hybird测试"))
     # msg.setcontent(sys.argv[1].decode("GBK"))  # windows console下，参数编码为GBK
