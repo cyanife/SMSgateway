@@ -1,11 +1,14 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 import urllib2
+import os
 import sys
 import time
 import json
 import logging
 import logging.handlers
+
+import config
 
 reload(sys)
 sys.setdefaultencoding('utf-8')
@@ -15,7 +18,7 @@ class AccessToken(object):
     def __init__(self, token):
         self._corpid = token.pop("corpid", '')
         self._secret = token.pop("secret", '')
-        self._tokenfile = ''
+        self._tokenfile = config.TOKEN_PATH
 
     def setcorpid(self, corpid):
         self._corpid = corpid
@@ -26,14 +29,13 @@ class AccessToken(object):
     def settokenfile(self, tokenfile):
         self._tokenfile = tokenfile
 
-    def getcorpinfo(self, infofile):
+    def getcorpinfo(self, info):
         try:
-            with open(infofile, 'r') as f:
-                info_dict = json.loads(f.read())
-                self.setcorpid(info_dict.get("corpid"))
-                self.setsecret(info_dict.get("secret"))
-        except IOError:
-            print("get info failed, check the file!")
+            info_dict = json.loads(info)
+            self.setcorpid(info_dict.get("corpid"))
+            self.setsecret(info_dict.get("secret"))
+        except ValueError:
+            print("get info failed, check the config file!")
 
     def settoken(self):
         if self._corpid == '' or self._secret == '':
@@ -81,7 +83,8 @@ class Activemessage(object):
         self.__dict__.update(message)
 
     def sendmessage(self, token):
-        message = json.dumps(self.__dict__, ensure_ascii=False)
+        message = json.dumps(self.__dict__, ensure_ascii=False).encode('utf-8')
+        # json.dumps returns unicode type, encoding to str type with utf-8 required.
         url = "https://qyapi.weixin.qq.com/cgi-bin/message/send?access_token=%s" % (token,)
         request = urllib2.Request(url, message)
         response = urllib2.urlopen(request)
@@ -100,16 +103,15 @@ class Textmessage(Activemessage):
         text = {"content": content}
         self.text = text
 
-    def loadmessage(self, filename):
+    def loadmessage(self, message):
         try:
-            with open(filename, 'r') as f:
-                message = json.load(f)
-                self.update(message)
+            message = json.loads(message)
+            self.update(message)
         except IOError:
-            print("Failed to load message from file!")
+            print("Failed to load message from JSON!")
 
 
-class Parseargv(object):
+class Parseargv(object):  # Linux only, in windows console chinese text encoded with ANSI/GBK, decoding needed.
     def __init__(self, argv):
         self.sender = argv[1]  # sender's phone number
         self.time_received = argv[2]  # time received
@@ -117,42 +119,35 @@ class Parseargv(object):
 
 
 def main():
+    # Change working directory
+    os.chdir(os.path.dirname(sys.argv[0]))
+
     # Setup logger
-    LOG_PATH = r"C:\myfiles\nutstore\python\smsgateway\smsgateway.log"
     logger = logging.getLogger()
     logger.setLevel(logging.INFO)
     formatter = logging.Formatter('[%(asctime)s %(levelname)s] %(message)s')
-    handler = logging.handlers.RotatingFileHandler(LOG_PATH, maxBytes=5 * 1024 * 1024, backupCount=1)
+    handler = logging.handlers.RotatingFileHandler(config.LOG_PATH, maxBytes=5 * 1024 * 1024, backupCount=1)
     handler.setFormatter(formatter)
     logger.addHandler(handler)
-    # Get token
-    BLANK_TOKEN = {}
-    INFO_FILE = "./corpinfo.conf"
-    TOKEN_FILE = "./token.json"
 
-    tk = AccessToken(BLANK_TOKEN)
-    tk.getcorpinfo(INFO_FILE)
-    tk.settokenfile(TOKEN_FILE)
+    # Get token
+    tk = AccessToken(config.CORP_INFO)
     token = tk.gettoken()
+
     # Send message
-    MESSAGE_CONF = "./message.conf"
-    BLANK_MESSAGE = {}
-    msg = Textmessage(BLANK_MESSAGE)
-    msg.loadmessage(MESSAGE_CONF)
+    msg = Textmessage(config.MESSAGE_CONF)
     argv = Parseargv(sys.argv)
-    # msg.setcontent(unicode("hybird测试"))
-    # msg.setcontent(sys.argv[1].decode("GBK"))  # windows console下，参数编码为GBK
     msg.setcontent("%s\nFrom:%s\nTime:%s" % (argv.sms_content, argv.sender, argv.time_received))
-    # msg.setcontent(sys.argv[1])  # linux下，参数编码为UTF8
     result = msg.sendmessage(token)
+
+    # Record log
     errcode = result.pop("errcode", 1)
     if errcode == 0:
         logger.info("SENDER:%s TIME:%s CONTENT:%s FORWARD:%s" % (argv.sender, argv.time_received, argv.sms_content,
                                                                  'SUCCESS'))
     else:
-        logger.error("SENDER:%s TIME:%s CONTENT:%s FORWARD:%s ERRINFO:" % (argv.sender, argv.time_received,
-                                                                           argv.sms_content, 'FAIL', result))
-        # print result
+        logger.error("SENDER:%s TIME:%s CONTENT:%s FORWARD:%s ERRINFO:%s" % (argv.sender, argv.time_received,
+                                                                             argv.sms_content, 'FAIL', str(result)))
 
 
 if __name__ == '__main__':
