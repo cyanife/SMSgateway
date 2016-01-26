@@ -29,7 +29,7 @@ For example, the `[from-trunk-dongle]` block in `extensions.conf` can be set as 
 [from-trunk-dongle]
 exten => sms,1,Verbose(Incoming SMS from ${CALLERID(num)} ${BASE64_DECODE(${SMS_BASE64})})
 exten => sms,n,Set(FILE(/var/log/asterisk/sms.txt,,,a)=${STRFTIME(${EPOCH},,%Y-%m-%d %H:%M:%S)} - ${DONGLENAME} - ${CALLERID(num)}: ${BASE64_DECODE(${SMS_BASE64})})
-exten => sms,n,AGI(weixin.py,"${CALLERID(num)}","${STRFTIME(${EPOCH}",,%Y-%m-%d %H:%M:%S)},${BASE64_DECODE(${SMS_BASE64})})
+exten => sms,n,AGI(weixin.py,${CALLERID(num)},${STRFTIME(${EPOCH},,%Y-%m-%d %H:%M:%S)},${BASE64_DECODE(${SMS_BASE64})})
 exten => sms,n,Hangup()
 exten => _.,1,Set(CALLERID(name)=${CALLERID(num)})
 exten => _.,n,Goto(from-trunk,${EXTEN},1)
