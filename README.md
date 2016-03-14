@@ -25,7 +25,7 @@ Edit Asterisk extensions config file (default: `/etc/asterisk/extensions.conf`),
 AGI(weixin.py,"${SENDER_NUMBER}","${RECEIVING_TIME}","${SMS_CONTENT}")
 ``` 
 
-For example, the `[from-trunk-dongle]` block in `extensions.conf` can be set as below:
+For example, the `[from-trunk-dongle]` context in `extensions.conf` can be set as below:
 
 ```
 [from-trunk-dongle]
