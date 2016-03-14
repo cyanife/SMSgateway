@@ -7,11 +7,7 @@ import time
 import json
 import logging
 import logging.handlers
-
-import config
-
-reload(sys)
-sys.setdefaultencoding('utf-8')
+import traceback
 
 
 class AccessToken(object):
@@ -151,4 +147,15 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    try:
+        import config
+        reload(sys)
+        sys.setdefaultencoding('utf-8')
+        main()
+        sys.exit(0)
+    except:
+        err = open('/tmp/smsgateway_err','wb')
+        e=traceback.format_exc()
+        err.write(e)
+        err.close()
+        sys.exit(1)

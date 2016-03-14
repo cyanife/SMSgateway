@@ -8,11 +8,13 @@ Asterisk 10+ with 3G dongle driver [asterisk-chan-dongle](https://github.com/bg1
 
 ## Usage
 
-Clone the repo with `git`, copy `weixin.py` and `config.py` to Asterisk AGI directory (default: `/var/lib/asterisk/agi-bin/`).
+Clone the repo with `git`, copy `weixin.py` and `config.py` to Asterisk AGI directory (default: `/var/lib/asterisk/agi-bin/`) and make them executable.
 ```
 $ git clone https://github.com/cyanife/SMSgateway.git
 $ cd SMSgateway
 $ sudo cp -b *.py /var/lib/asterisk/agi-bin/
+$ cd /var/lib/asterisk/agi-bin
+$ chmod 755 *.py
 ```
 
 Edit `config.py`, add your enterprise account's corpid and secret code, replace the values in `MESSAGE_CONF` to fit your own configuration, [reference here](http://qydev.weixin.qq.com/wiki/index.php?title=%E6%B6%88%E6%81%AF%E7%B1%BB%E5%9E%8B%E5%8F%8A%E6%95%B0%E6%8D%AE%E6%A0%BC%E5%BC%8F).

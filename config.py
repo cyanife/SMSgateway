@@ -22,10 +22,10 @@ MESSAGE_CONF = {
     "safe": "0"
 }
 
-# TOKEN FILE PATH (default: /var/temp/token.json)
+# TOKEN FILE PATH (default: /tmp/token.json)
 
 TOKEN_PATH = r'/tmp/token.json'
 
-# LOG FILE PATH (default: /var/log/smsgateway.log)
+# LOG FILE PATH (default: /var/log/asterisk/smsgateway.log)
 
-LOG_PATH = r'/var/log/smsgateway.log'
+LOG_PATH = r'/var/log/asterisk/smsgateway.log'
