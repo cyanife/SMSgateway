@@ -19,13 +19,13 @@ $ chmod 755 *.py
 
 Edit `config.py`, add your enterprise account's corpid and secret code, replace the values in `MESSAGE_CONF` to fit your own configuration, [reference here](http://qydev.weixin.qq.com/wiki/index.php?title=%E6%B6%88%E6%81%AF%E7%B1%BB%E5%9E%8B%E5%8F%8A%E6%95%B0%E6%8D%AE%E6%A0%BC%E5%BC%8F).
 
-Edit Asterisk extensions config file (default: `/etc/asterisk/extensions.conf`), the script need to be called as this format:
+Edit Asterisk extensions config file (default: `/etc/asterisk/extensions.conf`), the script should be invoked as this format:
 
 ```
 AGI(weixin.py,"${SENDER_NUMBER}","${RECEIVING_TIME}","${SMS_CONTENT}")
 ``` 
 
-For example, the `[from-trunk-dongle]` context in `extensions.conf` can be set as below:
+For example, block `[from-trunk-dongle]` in `extensions.conf` can be set as below:
 
 ```
 [from-trunk-dongle]
